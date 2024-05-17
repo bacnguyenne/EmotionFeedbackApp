@@ -88,3 +88,16 @@ class Order(models.Model):
         max_length=50,
         default="Pending"
         )
+
+class EmotionData(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    happiness = models.FloatField()
+    sadness = models.FloatField()
+    surprise = models.FloatField()
+    anger = models.FloatField()
+    fear = models.FloatField()
+    disgust = models.FloatField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.timestamp}"

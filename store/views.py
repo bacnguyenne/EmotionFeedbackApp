@@ -8,6 +8,35 @@ from django.views import View
 import decimal
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator # for Class Based Views
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from .models import EmotionData
+import json
+
+@csrf_exempt
+@login_required
+def save_emotion_data(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        happiness = data.get('happiness')
+        sadness = data.get('sadness')
+        surprise = data.get('surprise')
+        anger = data.get('anger')
+        fear = data.get('fear')
+        disgust = data.get('disgust')
+        
+        EmotionData.objects.create(
+            user=request.user,
+            happiness=happiness,
+            sadness=sadness,
+            surprise=surprise,
+            anger=anger,
+            fear=fear,
+            disgust=disgust
+        )
+        return JsonResponse({'status': 'success'})
+
+    return JsonResponse({'status': 'fail'})
 
 
 # Create your views here.
