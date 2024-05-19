@@ -91,7 +91,7 @@ class Order(models.Model):
 
 class EmotionData(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    happiness = models.FloatField()
+    joy = models.FloatField()
     sadness = models.FloatField()
     surprise = models.FloatField()
     anger = models.FloatField()

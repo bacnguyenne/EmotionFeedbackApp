@@ -16,10 +16,7 @@
                       {% for cat_menu in categories_menu %}
                         <a class="dropdown-item border-0 transition-link" href="{% url 'store:category-products' cat_menu.slug %}">{{cat_menu.title}}</a>
                       {% endfor %}
-                    {% endif %}
-                    <hr>
-                    <a class="dropdown-item border-0 transition-link" href="{% url 'store:all-categories' %}">All Categories</a>
-                    
+                    {% endif %}                    
                 </li>
               </ul>
               <ul class="navbar-nav ml-auto"> 

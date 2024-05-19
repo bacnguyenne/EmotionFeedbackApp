@@ -43,5 +43,7 @@ urlpatterns = [
 
     path('product/test/', views.test, name="test"),
     path('save_emotion_data/', views.save_emotion_data, name='save_emotion_data'),
+    # path('check_login_status/', views.check_login_status, name='check_login_status'),
+    # path('not_logged_in/', views.not_logged_in, name='not_logged_in'),
     
 ]

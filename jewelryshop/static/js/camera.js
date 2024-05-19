@@ -6,8 +6,6 @@ videoElement.style.right = '10px';
 videoElement.style.width = '300px';
 videoElement.style.height = 'auto';
 videoElement.style.zIndex = '9999';
-
-// Gắn phần tử video vào body của trang
 document.body.appendChild(videoElement);
 
 // Yêu cầu quyền truy cập camera và hiển thị nó trong phần tử video
@@ -20,45 +18,27 @@ navigator.mediaDevices.getUserMedia({ video: true })
         console.error("Lỗi khi truy cập camera: ", err);
     });
 
-// Function để chụp ảnh từ video
-function captureImage(videoElement) {
-    const canvas = document.createElement('canvas');
-    canvas.width = videoElement.videoWidth;
-    canvas.height = videoElement.videoHeight;
-    const context = canvas.getContext('2d');
-    context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL('image/jpeg');
-}
+// Function để gửi văn bản đến API phân tích cảm xúc
+async function analyzeEmotion(text) {
+    const axios = require('axios');
 
-// Function để gửi ảnh đến Face++ API và thu thập cảm xúc
-function analyzeEmotion(imageBase64) {
-    const apiKey = 'ONcTk7JuiiKdOvGqrv4';
-    const apiSecret = 'smBnKo0oroUL7MgFOPbnYtjt3U-PucR9';
-    const formData = new FormData();
-    formData.append('api_key', apiKey);
-    formData.append('api_secret', apiSecret);
-    formData.append('image_base64', imageBase64.split(',')[1]);
-    formData.append('return_attributes', 'emotion');
-
-    fetch('https://api-us.faceplusplus.com/facepp/v3/detect', {
-        method: 'POST',
+    const options = {
+        method: 'GET',
+        url: 'https://twinword-emotion-analysis-v1.p.rapidapi.com/analyze/',
+        params: { text: text },
         headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: new URLSearchParams(formData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.faces && data.faces.length > 0) {
-            const emotions = data.faces[0].attributes.emotion;
-            sendEmotionDataToServer(emotions);
-        } else {
-            console.log('No faces detected.');
+            'X-RapidAPI-Key': 'b6e563cec0msh651e063bea4564ep1222d3jsne387d41008ff',
+            'X-RapidAPI-Host': 'twinword-emotion-analysis-v1.p.rapidapi.com'
         }
-    })
-    .catch(err => {
-        console.error("Error in Face++ API call: ", err);
-    });
+    };
+
+    try {
+        const response = await axios.request(options);
+        console.log(response.data);
+        sendEmotionDataToServer(response.data.emotion_scores);
+    } catch (error) {
+        console.error(error);
+    }
 }
 
 // Function để gửi dữ liệu cảm xúc đến server
@@ -70,7 +50,7 @@ function sendEmotionDataToServer(emotions) {
             'X-CSRFToken': getCookie('csrftoken') // Đảm bảo bạn đã có hàm getCookie để lấy CSRF token
         },
         body: JSON.stringify({
-            happiness: emotions.happiness,
+            joy: emotions.joy,
             sadness: emotions.sadness,
             surprise: emotions.surprise,
             anger: emotions.anger,
@@ -94,7 +74,6 @@ function getCookie(name) {
         const cookies = document.cookie.split(';');
         for (let i = 0; i < cookies.length; i++) {
             const cookie = cookies[i].trim();
-            // Does this cookie string begin with the name we want?
             if (cookie.substring(0, name.length + 1) === (name + '=')) {
                 cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
                 break;
@@ -104,8 +83,13 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// Thiết lập để chụp ảnh và phân tích cảm xúc mỗi 5 giây
+// Lấy văn bản để phân tích cảm xúc từ người dùng
+function getTextForEmotionAnalysis() {
+    return "After living abroad for such a long time, seeing my family was the best present I could have ever wished for.";
+}
+
+// Thiết lập để phân tích cảm xúc mỗi 5 giây
 setInterval(() => {
-    const imageBase64 = captureImage(videoElement);
-    analyzeEmotion(imageBase64);
-}, 10000);
+    const text = getTextForEmotionAnalysis();
+    analyzeEmotion(text);
+}, 5000);

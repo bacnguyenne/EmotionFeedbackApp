@@ -7,37 +7,49 @@ from django.contrib import messages
 from django.views import View
 import decimal
 from django.contrib.auth.decorators import login_required
-from django.utils.decorators import method_decorator # for Class Based Views
+from django.utils.decorators import method_decorator 
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from .models import EmotionData
 import json
+import logging
+from django.core.paginator import Paginator
+
+logger = logging.getLogger(__name__)
+
+# @login_required
+# def check_login_status(request):
+#     return JsonResponse({'logged_in': True})
+
+# def not_logged_in(request):
+#     return JsonResponse({'logged_in': False})
 
 @csrf_exempt
 @login_required
 def save_emotion_data(request):
     if request.method == 'POST':
         data = json.loads(request.body)
-        happiness = data.get('happiness')
-        sadness = data.get('sadness')
-        surprise = data.get('surprise')
-        anger = data.get('anger')
-        fear = data.get('fear')
-        disgust = data.get('disgust')
-        
-        EmotionData.objects.create(
+        logger.debug(f'Received data: {data}')
+        joy = data.get('joy', 0.0)
+        sadness = data.get('sadness', 0.0)
+        surprise = data.get('surprise', 0.0)
+        anger = data.get('anger', 0.0)
+        fear = data.get('fear', 0.0)
+        disgust = data.get('disgust', 0.0)
+
+        emotion_data = EmotionData.objects.create(
             user=request.user,
-            happiness=happiness,
+            joy=joy,
             sadness=sadness,
             surprise=surprise,
             anger=anger,
             fear=fear,
             disgust=disgust
         )
+        logger.debug(f'Emotion data saved: {emotion_data}')
         return JsonResponse({'status': 'success'})
 
     return JsonResponse({'status': 'fail'})
-
 
 # Create your views here.
 
@@ -69,15 +81,47 @@ def all_categories(request):
 
 def category_products(request, slug):
     category = get_object_or_404(Category, slug=slug)
-    products = Product.objects.filter(is_active=True, category=category)
-    categories = Category.objects.filter(is_active=True)
+    products = Product.objects.filter(category=category)
+
+    # Lọc sản phẩm theo từ khóa tìm kiếm nếu có
+    query = request.GET.get('q')
+    if query:
+        products = products.filter(title__icontains=query)
+    
+    # Lọc sản phẩm theo các tiêu chí filter
+    price_from = request.GET.get('price_from')
+    price_to = request.GET.get('price_to')
+    if price_from and price_to:
+        products = products.filter(price__gte=price_from, price__lte=price_to)
+
+    # Sắp xếp sản phẩm
+    sort_by = request.GET.get('sort_by', 'default')
+    if sort_by == 'popularity':
+        products = products.order_by('-popularity')
+    elif sort_by == 'low-high':
+        products = products.order_by('price')
+    elif sort_by == 'high-low':
+        products = products.order_by('-price')
+    else:
+        products = products.order_by('id')  # Mặc định sắp xếp theo id
+
+    # Phân trang sản phẩm
+    paginator = Paginator(products, 12)  # 12 sản phẩm mỗi trang
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    categories = Category.objects.all()
     context = {
         'category': category,
-        'products': products,
+        'products': page_obj,  # Chỉ truyền đối tượng trang
         'categories': categories,
+        'price_from': price_from,
+        'price_to': price_to,
+        'query': query,
+        'sort_by': sort_by,
+        'paginator': paginator,
     }
     return render(request, 'store/category_products.html', context)
-
 
 # Authentication Starts Here
 

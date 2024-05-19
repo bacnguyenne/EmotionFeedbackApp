@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12 text-center">
+            <h2>You have been logged out successfully.</h2>
+            <a href="{% url 'store:home' %}" class="btn btn-primary">Go to Home</a>
+        </div>
+    </div>
+</div>
+{% endblock content %}
